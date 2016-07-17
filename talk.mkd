@@ -130,6 +130,7 @@ layout: false
   * Current iteration is quite general:
     + Relies heavily on templates
     + Metaprogramming to have full control at runtime
+
   * Hard to understand, hard to debug
   * Needs Boost.MPL
 
