@@ -127,10 +127,9 @@ layout: false
   * Unit testing in C++ cumbersome
 
 - Re-think and re-implement Green's function engine
-  * Current iteration is quite general:
-    + Relies heavily on templates
-    + Metaprogramming to have full control at runtime
-
+  * Current iteration is quite general, but:
+    1. Relies heavily on templates
+    2. Metaprogramming to have full control at runtime
   * Hard to understand, hard to debug
   * Needs Boost.MPL
 
