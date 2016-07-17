@@ -1,0 +1,587 @@
+name: inverse
+layout: true
+class: center, middle, inverse
+---
+#Polarizable Continuum Model for Spherically Symmetric Diffuse Interfaces
+
+.author[Roberto Di Remigio]
+
+.date[7 April 2016, Alta]
+
+.footnote[Slides available on [GitHub](https://github.com/robertodr/talk-spherical-diffuse), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) licensed]
+
+???
+I will present a recent extension to the PCM.
+We are now able to tackle nonuniform environments
+with spatially varying permittivity in spherical symmetry.
+
+---
+layout: false
+
+.left-column[
+  ## Outline
+]
+.right-column[
+
+- Diffuse interfaces
+
+- Polarizable continuum model
+
+- Green's functions in spherical symmetry
+
+- Implementation
+
+- Results and outlook
+
+]
+
+???
+
+---
+## Diffuse interfaces
+
+- Surface enhanced spectroscopies
+- Challenging environments
+- QM/MM only recently, for planar interfaces
+- Continuum approach: consider a spatially varying permittivity
+
+<div class="imageWrapper">
+  <img class="overlayImage" src="images/spherical_diffuse.jpg" style="width: 80%" align="middle">
+--
+  <img class="overlayImage" src="images/paper.png" style="width: 110%" align="middle">
+</div>
+<p style="clear: both;">
+
+???
+
+- Interfaces are ubiquitous
+- We want to be able to treat chemistry and physics at interfaces, e.g.
+  adsorption phenomena, surface enhanced spectroscopies.
+- Some spectroscopic phenomena are relevant in symmetry-broken environments (SHG)
+
+---
+## Polarizable continuum model.red[<sup>1</sup>]
+
+<p style="text-align:center;"><img src="images/pcm.png" style="width: 95%"></p>
+
+.footnote[.red[<sup>1</sup>] J. Tomasi, B. Mennucci, R. Cammi, _Chem. Rev._, __105__, 2999, (2005)]
+
+???
+
+- Model the solvent as a polarizable dielectric continuum
+- Parameters for the definition of the boundary, i.e. the cavity
+- Parameters describing the solvent: permittivity (static and optical)
+- Notice that the solvent parameters are, _by definition_, averaged!
+
+---
+## Mathematics of PCM.red[<sup>2</sup>]
+
+- Transmission problem, find `\(\psi\)` such that:
+`$$
+ \begin{align}
+  L_\mathrm{i} \psi(\mathbf{r}) &= -4\pi\rho(\mathbf{r}) \quad \forall \mathbf{r} \in C \\
+  L_\mathrm{e} \psi(\mathbf{r}) &= 0 \quad \forall \mathbf{r} \notin C \\
+  [\psi(\mathbf{s})] &= 0 \quad \forall \mathbf{s}\,\text{in}\,\partial C \\
+  [\partial_L \psi(\mathbf{s})] &= 0 \quad \forall \mathbf{s}\,\text{in}\,\partial C \\
+  |\psi(\mathbf{r})| &\leq C \|\mathbf{r} \|^{-1} \,\,\text{for}\,\,\| \mathbf{r} \|\rightarrow\infty
+ \end{align}
+$$`
+    * `\(L_\mathrm{i}\)` and `\(L_\mathrm{e}\)` are elliptic differential operators
+    * `\([\psi(\mathbf{s})]\)` is the Dirichlet condition in terms of  _trace operators_
+    * `\([\partial_L \psi(\mathbf{s})]\)` is the Neumann condition in terms in terms of _conormal derivatives_
+- Define the _reaction potential_:
+`$$
+ \psi(\mathbf{r}) = \phi(\mathbf{r}) + \xi(\mathbf{r})
+ = \int_C \mathop{}\!\mathrm{d}\mathbf{r}^\prime \frac{\rho(\mathbf{r}^\prime)}{|\mathbf{r} - \mathbf{r}^\prime|} +
+  \int_{\partial C} \mathop{}\!\mathrm{d}\mathbf{s} \frac{\sigma(\mathbf{s})}{|\mathbf{r} - \mathbf{s}|}
+$$`
+- Find its _representation_ inside the cavity as a solution to an integral equation
+
+.footnote[.red[<sup>2</sup>] E. Cancès, B. Mennucci, _J. Math. Chem._, __23__, 309, (1998)]
+
+???
+
+- `\(L_\star\)` are elliptic differential operators
+- Trace operators are the extension of the concept of restriction of a function
+  over a boundary to generalized functions in Sobolev space
+- Conormal derivative extends the notion of a normal derivative to functions in
+  Sobolev spaces
+- `\(\sigma(\mathbf{s})\)` is called the apparent surface charge (ASC)
+
+---
+
+## Mathematics of PCM, contd..red[<sup>3</sup>]
+
+- `\(\sigma\)` is the _unique solution_ to the IEF-PCM equation:
+`$$
+\left[\left(2\pi\mathcal{I} - \mathcal{D}_\mathrm{e}\right)\mathcal{S}_\mathrm{i} +
+      \mathcal{S}_\mathrm{e}\left(2\pi\mathcal{I} + \mathcal{D}^\dagger_\mathrm{i}\right) \right]\sigma =
+-\left[\left(2\pi\mathcal{I} - \mathcal{D}_\mathrm{e}\right) -
+\mathcal{S}_\mathrm{e}\mathcal{S}_\mathcal{i}^{-1}\left(2\pi\mathcal{I} - \mathcal{D}_\mathrm{i}\right)\right]\phi
+$$`
+- Integral operators are Calderón projector components:
+`$$
+ \begin{align}
+  (\mathcal{S}_\star f)(\mathbf{s}) &= \int_{\partial C} \mathop{}\!\mathrm{d}\mathbf{s}^\prime \color{red}{G(\mathbf{s}, \mathbf{s}^\prime)}f(\mathbf{s}^\prime) \\
+  (\mathcal{D}_\star f)(\mathbf{s}) &= \int_{\partial C} \mathop{}\!\mathrm{d}\mathbf{s}^\prime [\partial_{L_\star}^\prime\color{red}{G(\mathbf{s}, \mathbf{s}^\prime)}]f(\mathbf{s}^\prime) \\
+  (\mathcal{D}^\dagger_\star f)(\mathbf{s}) &= \int_{\partial C} \mathop{}\!\mathrm{d}\mathbf{s}^\prime [\partial_{L_\star}\color{red}{G(\mathbf{s}, \mathbf{s}^\prime)}]f(\mathbf{s}^\prime)
+ \end{align}
+$$`
+- Solution by a boundary element method (BEM):
+   * Discretized cavity boundary + piecewise regular bases = finite elements
+   * Form boundary integral operators: _Galerkin_ or _collocation_ method
+   * Solve linear system: direct inversion or iterative solver
+
+.footnote[.red[<sup>3</sup>] S. A. Sauter and C. Schwab, _Boundary Element Methods_, Springer, 2011]
+
+???
+
+- We've transformed a boundary value problem (BVP) into a boundary integral equation (BIE)
+- Integral operators are defined in terms of traces and conormal derivatives
+- The integral operators have well-defined mapping properties between Sobolev
+  spaces of fractional order
+- Knowledge of the Green's functions inside and outside the cavity is key to
+  the method
+
+---
+layout: false
+## Green's functions in spherical symmetry
+
+<img src="images/spherical_diffuse.jpg" style="float: left; width: 30%; margin-right: 1%; margin-bottom: 0.5em;">
+<img src="images/equations.png" style="float: left; width: 55%; margin-right: 1%; margin-bottom: 0.5em;">
+<p style="clear: both;">
+
+- The radial part is solution to:
+`
+$$
+  \frac{\mathop{}\!\mathrm{d}^2 R_\ell}{\mathop{}\!\mathrm{d} r^2} + \left(\frac{2}{r} +
+  \lambda_\varepsilon(r)\right)\frac{\mathop{}\!\mathrm{d} R_\ell}{\mathop{}\!\mathrm{d} r} - \frac{\ell(\ell+1)}{r^2}R_\ell
+ = -\frac{4\pi}{r^2}\frac{1}{\varepsilon(r)}\delta(r-r^\prime)
+$$
+`
+   * `\(\lambda_\varepsilon(r) = \frac{\mathop{}\!\mathrm{d}\varepsilon(r)}{\mathop{}\!\mathrm{d}r}\frac{1}{\varepsilon(r)}\)`
+     weighted dielectric distribution
+- Two solutions, `\(u_\ell\sim r^\ell\)` and `\(v_\ell\sim r^{-\ell -1}\)`:
+   * `\(u_\ell\)` and `\(v_\ell\)` to be determined _numerically_
+
+`
+$$
+  R_\ell =
+ \begin{cases}
+   c_\ell^{(1)}(r^\prime) u_\ell(r) &+
+   c_\ell^{(2)}(r^\prime) v_\ell(r),\, \text{for}\,\, r < r^\prime \\
+   c_\ell^{(3)}(r^\prime) u_\ell(r) &+
+   c_\ell^{(4)}(r^\prime) v_\ell(r),\, \text{for}\,\, r > r^\prime
+ \end{cases}
+$$
+`
+
+???
+
+- The Green's function for a given differential operator is the solution to the
+  differential equation with a point source. It's also called the _fundamental
+  solution_
+- We also have azimuthal symmetry, hence the summation over Legendre
+  polynomials. This can be shown more rigorously starting from the summation
+  over spherical harmonics.
+- The radial equation is similar to the usual one where spherical boundary
+  conditions are imposed. The difference is the additional first order term due
+  to the weighted dielectric distribution, which can be thought to act as a damping
+  term. The source term is also "damped".
+- Given that the permittivity profile is sigmoidal, we impose that the
+  solutions to the homogeneous equation are asymptotically equal to the ones
+  for spherical boundary conditions.
+
+---
+layout: false
+## Green's functions in spherical symmetry, contd.
+
+<img src="images/spherical_diffuse.jpg" style="float: left; width: 30%; margin-right: 1%; margin-bottom: 0.5em;">
+<img src="images/equations.png" style="float: left; width: 55%; margin-right: 1%; margin-bottom: 0.5em;">
+<p style="clear: both;">
+
+
+- Two solutions, `\(u_\ell\sim r^\ell\)` and `\(v_\ell\sim r^{-\ell -1}\)`:
+   * `\(W_\ell = \frac{\mathop{}\!\mathrm{d} v_\ell}{\mathop{}\!\mathrm{d}r}u_\ell - \frac{\mathop{}\!\mathrm{d}u_\ell}{\mathop{}\!\mathrm{d}r}v_\ell\)` is the _Wronskian_
+`
+$$
+  G(\mathbf{r}, \mathbf{r}^\prime) = \sum_{\ell=0}^\infty G_\ell(\mathbf{r}, \mathbf{r}^\prime)
+  =
+  \begin{cases}
+    \sum_{\ell=0}^\infty
+    \frac{-(2\ell+1)}{r^{\prime 2}\varepsilon(r^\prime)}
+    \frac{u_\ell(r)v_\ell(r^\prime)}{W_\ell(r^\prime)}
+    P_\ell(\cos\gamma),\,\text{for}\,\, r<r^\prime \\
+   \sum_{\ell=0}^\infty
+   \frac{-(2\ell+1)}{r^{\prime 2}\varepsilon(r^\prime)}
+   \frac{u_\ell(r^\prime)v_\ell(r)}{W_\ell(r^\prime)}
+    P_\ell(\cos\gamma),\,\text{for}\,\, r>r^\prime
+  \end{cases}
+$$
+`
+- Components `\(G_\ell(\mathbf{r}, \mathbf{r}^\prime)\)` contain Coulomb and image contributions:
+   * Numerically slowly converging
+   * Troublesome for subsequent BEM collocation
+
+<font color="red">
+<center>Need to separate Coulomb and image potentials!</center>
+</font>
+
+???
+
+- The actual solutions are fixed by integrating the equation on a vanishingly
+  small volume around the source discontinuity
+
+---
+class: left
+layout: false
+
+## Separation of the Coulomb singularity
+
+`
+$$
+  G(\mathbf{r}, \mathbf{r}^\prime) = \sum_{\ell=0}^\infty G_\ell(\mathbf{r}, \mathbf{r}^\prime)
+$$
+`
+
+- Use _exact_ expression of Coulomb singularity:
+`
+$$
+  \frac{1}{|\mathbf{r}-\mathbf{r}^\prime|} =
+  \frac{1}{r_>}
+  \sum^\infty_{\ell=0}
+  \left(\frac{r_<}{r_>}\right)^\ell
+  P_\ell(\cos\gamma)
+$$
+`
+- ...modulated by proper coefficient:
+`
+$$
+  G(\mathbf{r}, \mathbf{r}^\prime) =
+  \frac{1}{C(\mathbf{r}, \mathbf{r}^\prime)|\mathbf{r} - \mathbf{r}^\prime|} +
+  G_\mathrm{img}(\mathbf{r}, \mathbf{r}^\prime)
+$$
+`
+   * The image potential is _nonsingular_
+- Coefficient is calculated as:
+`
+$$
+  C(\mathbf{r}, \mathbf{r}^\prime)
+  =
+  \frac{1}{r_>}
+  \lim_{\ell\infty}
+  \left(\frac{r_<}{r_>}\right)^\ell
+  \frac{P_\ell(\cos\gamma)}{G_\ell(\mathbf{r}, \mathbf{r}^\prime)}
+$$
+`
+
+---
+
+## Separation of the Coulomb singularity, contd.
+
+- Image potential:
+`
+$$
+  G_\mathrm{img}(\mathbf{r}, \mathbf{r}^\prime)
+  =
+  \sum_{\color{red}{\ell = 1}}^\infty
+  \left(G_\ell(\mathbf{r}, \mathbf{r}^\prime) -
+  \frac{1}{C(\mathbf{r}, \mathbf{r}^\prime)|\mathbf{r} -
+  \mathbf{r}^\prime|}\right)
+$$
+`
+   * Monopole term removed: it's entirely contained in the singular, Coulomb portion
+   * Unphysical additional polarization would arise at the interface
+   * Consistent with sharp spherical interface results
+
+--
+
+<p style="text-align:center;"><img src="images/why_you_need_testing.jpg" style="width: 50%"></p>
+
+???
+
+- We have to remove an unphysical monopole contribution
+
+---
+
+## Implementation
+
+- Exponential transformation of the radial ODE:
+`
+$$
+  \frac{\mathop{}\!\mathrm{d}^2\rho_\ell}{\mathop{}\!\mathrm{d}r} + \left(\frac{\mathop{}\!\mathrm{d}\rho_\ell}{\mathop{}\!\mathrm{d}r}\right)
+  \left(\frac{\mathop{}\!\mathrm{d}\rho_\ell}{\mathop{}\!\mathrm{d}r} + \frac{2}{r} + \lambda_\varepsilon(r)\right) - \frac{\ell(\ell + 1)}{r^2} = 0
+$$
+`
+- ODE solved using the Bulirsch-Stoer adaptive integrator for the system:
+`
+$$
+ \left\lbrace
+ \begin{aligned}
+ \frac{\mathop{}\!\mathrm{d}\rho_\ell}{\mathop{}\!\mathrm{d}r} &= \sigma_\ell \\
+ \frac{\mathop{}\!\mathrm{d}\sigma_\ell}{\mathop{}\!\mathrm{d}r} &= -\sigma_\ell\left(\sigma_\ell + \frac{2}{r} + \lambda_\varepsilon(r)\right) + \frac{l(l+1)}{r^2}
+ \end{aligned}
+ \right.
+$$
+`
+- Summations truncated to `\(L\)`, separation coefficient evaluated at `\(\ell=2L\)`
+- `\(\mathrm{tanh}\)` and `\(\mathrm{erf}\)` profiles available
+- Cubic spline interpolations for radial sampling of solutions
+- Green's function directional derivative evaluated by a 3-point stencil
+- One-point centroid collocation BEM on spherical polygons (GePol)
+- Available in [LSDALTON](http://daltonprogram.org/) _via_ [PCMSolver](http://pcmsolver.readthedocs.org)
+
+???
+
+- The exponential transformation avoids possible arithmetic overflows
+- Truncation is to `\(L=30\)` by default
+
+---
+layout: false
+
+## Permittivity profiles
+
+<img src="images/permittivity_profiles.jpg" style="float: left; width: 45%; margin-right: 1%; margin-bottom: 0.5em;">
+<img src="images/permittivity_app.jpg" style="float: left; width: 48%; margin-right: 1%; margin-bottom: 0.5em;">
+<p style="clear: both;">
+
+`$$
+\begin{alignat}{2}
+\varepsilon(r) =  \frac{\varepsilon_1+\varepsilon_2}{2} + \frac{\varepsilon_2-\varepsilon_1}{2}\Sigma\left(\frac{r-c}{w}\right);
+\quad&\quad
+f(\varepsilon) =  \frac{\varepsilon(z)-1 }{\varepsilon(z)}
+\end{alignat}
+$$`
+
+- Onset of dielectric effect dominated by _Onsager factor_
+- `\(\Sigma\)` has to be differentiable
+- `\(w\)` too small leads to numerical instabilities
+- B3LYP/aug-cc-pVDZ calculations
+
+???
+
+- on the x axis is the distance from the interface center
+- `\(w = \frac{\tilde{w}}{6}\)` to keep consistency with Frediani et al.
+- `\(\Sigma\)` is a sigmoidal function, centered at `\(c\)`. The `\(w\)` parameter
+is the HWHM for the associated distribution function, i.e. its first derivative
+- Despite the fact that the variation in permittivity happens around `\(c\)`, the onset
+of the dielectric effect will be delayed slightly. This can be rationalized in
+terms of the Onsager factor.
+- The figure assumes `\(c = 10~\AA\)` and the droplet centered at the origin
+
+
+---
+layout: false
+
+## Effect of interface width: ions
+
+- Smooth transition between bulk values
+- Wider profile, smoother transition
+- Interface effect delayed (Onsager factor)
+
+<img src="images/Li-water_vapor.jpg" style="float: left; width: 45%; margin-right: 1%; margin-bottom: 0.5em;">
+<img src="images/Br-water_vapor.jpg" style="float: left; width: 45%; margin-right: 1%; margin-bottom: 0.5em;">
+<p style="clear: both;">
+
+???
+
+- on the x axis is the distance from the interface center
+- Lithium and bromide ions
+- Transport from a water droplet to vapour
+- `\(R_0 = 20~\AA\)`
+- Figures report user-defined values of `\(\tilde{w}\)`
+
+---
+layout: false
+
+## Effect of interface width: acetone
+
+- Wider profile, smoother transition
+- Interface effect delayed (Onsager factor)
+- Orientation matters
+
+<img src="images/acetone-par-water_vapor.jpg" style="float: left; width: 45%; margin-right: 1%; margin-bottom: 0.5em;">
+<img src="images/acetone-perp-water_vapor.jpg" style="float: left; width: 45%; margin-right: 1%; margin-bottom: 0.5em;">
+<p style="clear: both;">
+<img src="images/acetone_tangent.jpg" style="float: left; width: 45%; margin-right: 1%; margin-bottom: 0.5em;">
+<img src="images/acetone_normal.jpg" style="float: left; width: 45%; margin-right: 1%; margin-bottom: 0.5em;">
+<p style="clear: both;">
+
+<font color="red">
+<center>Two figures missing here</center>
+</font>
+
+???
+
+- on the x axis is the distance from the interface center
+- Acetone with dipole moment tangent or normal to the droplet surface
+- Transport from a water droplet to vapour
+- `\(R_0 = 20~\AA\)`
+- Figures report user-defined values of `\(\tilde{w}\)`
+- When the dipole moment is normal to the droplet, different parts of the molecule
+experience different dielectric environments. Of course, the interface size
+has to be quite small!
+
+---
+layout: false
+
+## Effect of interface width: PNA and L0
+
+- Only when `\(\tilde{w}=20~\AA\)` profile is smooth
+- Molecules experience different dielectric environments
+
+<img src="images/pna-water_vapor.jpg" style="float: left; width: 45%; margin-right: 1%; margin-bottom: 0.5em;">
+<img src="images/L0-water_vapor.jpg" style="float: left; width: 45%; margin-right: 1%; margin-bottom: 0.5em;">
+<p style="clear: both;">
+
+<img src="images/PNA_orientation.jpg" style="float: center; width: 45%; margin-right: 1%; margin-bottom: 0.5em;">
+<img src="images/L0_orientation.jpg" style="float: center; width: 45%; margin-right: 1%; margin-bottom: 0.5em;">
+<p style="clear: both;">
+
+???
+
+- on the x axis is the distance from the interface center
+- Both molecules are randomly oriented wrt the droplet
+- Transport from a water droplet to vapour
+- `\(R_0 = 20~\AA\)`
+- Figures report user-defined values of `\(\tilde{w}\)`
+- Given that the molecules are larger, features (bumps) in the
+solvation profiles will be smoothed out only with larger widths
+
+---
+layout: false
+
+## Effect of interface curvature: lithium ion
+
+`$$\Delta G_{R_0}(z) = G_{R_0}(z+R_0) - G_{R_0=80} (z+80)$$`
+
+- No effect on bulk values: Gauss' theorem
+- Water droplet to vapor bulk:
+  * image potential acts at medium-long range
+  * largest effect **before** ion crosses interface
+- Oil droplet to water bulk:
+  * image potential acts at short range
+  * largest effect **after** ion crosses interface
+
+<img src="images/Li-water_vapor-curvature.jpg" style="float: left; width: 45%; margin-right: 1%; margin-bottom: 0.5em;">
+<img src="images/Li-oil_water-curvature.jpg" style="float: left; width: 45%; margin-right: 1%; margin-bottom: 0.5em;">
+<p style="clear: both;">
+
+???
+
+- all interfaces have `\(\tilde{w} = 5.0~\AA\)`
+- on the x axis is the distance from the droplet center
+- We vary the droplet radius `\(R_0 = 5, 10, 20, 40, 80~\AA\)`
+- Take `\(R_0 = 80~\AA\)` as reference. We're not taking the difference wrt the
+  planar results as the two implementations are different and we don't want to
+  introduce implementation bias.
+- First picture: lithium ion, water to vapor transfer
+- Second picture: lithium ion, oil (`\(\varepsilon = 2\)`) to vapor transfer
+- The high dielectric constant of water makes the image potential negligible
+  inside the droplet and dominant outside.
+- For the oil droplet the converse happens.
+
+---
+layout: false
+
+## Effect of interface curvature: acetone
+
+`$$\Delta G_{R_0}(z) = G_{R_0}(z+R_0) - G_{R_0=80} (z+80)$$`
+
+- Profile features: combined effect of width and curvature
+- No effect on bulk values: Gauss' theorem
+- Largest effect localized at interface center
+- Relative to bulk solvation, larger effects than for ions
+- Similar conclusions for static dipole moments
+
+<img src="images/acetone-perp-water_vapor-curvature.jpg" style="width: 45%; margin-right: 1%; margin-bottom: 0.5em;">
+<img src="images/dipole-acetone-perp-water_vapor-curvature.jpg" style="width: 45%; margin-right: 1%; margin-bottom: 0.5em;">
+<p style="clear: both;">
+
+???
+
+- all interfaces have `\(\tilde{w} = 5.0~\AA\)`
+- we're not taking the difference wrt the planar results as the two
+  implementations are different and we don't want to introduce implementation
+  bias.
+- on the x axis is the distance from the interface center
+- acetone, water to vapor transfer. Dipole moment is normal to droplet
+- The appearance of features at the interface for larger solutes is due both to
+  the width of the interfacial region and the radius of the droplet
+- acetone, water to vapor transfer. Dipole moment is normal to droplet
+- 30% vs. 13% solvation effect wrt bulk solvation when comparing a dipolar to
+  an ionic system
+
+---
+
+## Conclusions
+
+- _Generic_ implementation for diffuse permittivity profiles
+   * Membrane-like profiles
+   * Planar interfaces
+- _Robust_ implementation for reasonable (not too steep) profiles
+   * Use of automatic differentiation (AD) for the Green's function
+- Investigate effect on response properties
+- What about nonelectrostatic interactions?
+
+???
+
+- Different profiles functional forms are no problem, provided they are
+  reasonable
+- Planar interfaces have different symmetry, but similar considerations apply.
+  The only difference is in the separation of the Coulomb singularity
+
+---
+class: left
+layout: false
+
+## _And now for something completely different_
+
+--
+
+<p style="text-align:center;"><img src="images/damn_solvent.png" style="width: 75%"></p>
+
+.footnote[Image credit: Davide Michetti]
+
+---
+class: left
+layout: false
+
+## QM/PCM/MM
+
+- Embed MM region _inside_ the PCM region
+   * Long-range electrostatics and polarization accounted for by PCM
+   * Short-range electrostatics accounted for by MM
+- Combination with polarizable MM leverages spatially varying permittivity
+   * Short-range polarizable MM + PCM with `\(\varepsilon_\infty\)`
+   * Long-range nonpolarizable MM + PCM with `\(\varepsilon_0\)`
+
+<img src="images/qmpcmmm_case1.jpg" style="width: 45%; margin-right: 1%; margin-bottom: 0.5em;">
+<img src="images/qmpcmmm_case2.jpg" style="width: 45%; margin-right: 1%; margin-bottom: 0.5em;">
+<p style="clear: both;">
+
+<font color="red">
+<center>Work in Progress!</center>
+</font>
+
+---
+layout: false
+
+## Acknowldegements
+
+- Dr. Stefano Corni (CNR, Modena)
+- Dr. Krzysztof Mozgawa
+- Dr. Hui Cao
+- Dr. Ville Weijo
+- Prof. Luca Frediani
+
+---
+name: last-page
+template: inverse
+
+## Thanks for your attention!
+
+Slideshow created using [remark] and served using [cicero]
+
+[remark]: https://github.com/gnab/remark
+[cicero]: https://github.com/bast/cicero
