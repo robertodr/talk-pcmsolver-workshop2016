@@ -80,6 +80,10 @@ layout: false
   * HF and DFT
   * Status: **released**
 
+---
+
+## Interfaces to QM programs, contd.
+
 - ReSpect (w/ M. Repisky, S. Komorowsky, K. Ruud, S. Pipolo)
   * 4-component, Kramers restricted and unrestricted HF and DFT
   * Real-time propagation _in progress_
@@ -97,7 +101,9 @@ layout: false
 
 ## Science with PCMSolver
 
-- VPCM (w/ T. Daniel Crawford)
+- VPCM for coupled cluster (w/ T. Daniel Crawford)
+
+- Pertubative corrections to PCM-CC (w/ T. Daniel Crawford)
 
 - Cavities (w/ C. S. Pomelli, M. Bugeanu)
 
@@ -109,12 +115,27 @@ layout: false
 
 ## Road ahead
 
+- Curb external dependencies or use lighter ones!
+  * Remove GetKw
+  * Remove Boost
+
 - Use YAML for input
   * Standard data description format
   * Human- _and_ machine-readable
 
 - Use Python for testing
   * Unit testing in C++ cumbersome
+
+- Re-think and re-implement Green's function engine
+  * Current iteration is quite general:
+    + Relies heavily on templates
+    + Metaprogramming to have full control at runtime
+  * Hard to understand, hard to debug
+  * Needs Boost.MPL
+
+---
+
+## Road ahead, contd.
 
 - Autogeneration of API Fortran bindings
   * Ease distribution and use of precompiled library
