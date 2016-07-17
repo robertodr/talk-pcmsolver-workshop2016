@@ -43,6 +43,7 @@ layout: false
   * The `master` branch has 51 tests
   * Continuous integration (CI) on Travis and Magnum
   * Daily testing on stallo. Results on [testboard.org](https://testboard.org/cdash/index.php?project=PCMSolver)
+    **Courtesy: Radovan Bast**
 
 ---
 
@@ -56,6 +57,7 @@ layout: false
   * Public repo on GitHub
   * Private repo on GitLab
   * Precompiled library served on [Anaconda cloud](https://anaconda.org/psi4/pcmsolver)
+    **Courtesy: Lori A. Burns**
 
 - Documentation
   * Served _via_ Read the Docs: [http://pcmsolver.readthedocs.io/en/latest/](http://pcmsolver.readthedocs.io/en/latest/)
@@ -63,17 +65,45 @@ layout: false
 
 ---
 
+## Interfaces to QM programs
+
+- DALTON (w/ A. H. Steindal, K. Ruud, M. Ringholm _et al._)
+  * HF and DFT up to linear electric response properties
+  * Interfaced also to open-ended response code (only electric)
+  * Status: **unreleased**
+
+- LSDALTON (w/ S. S. Reine)
+  * HF and DFT up to linear electric response properties
+  * Status: **released**
+
+- Psi4 (w/ T. Daniel Crawford, A. Simmonett, L. A. Burns)
+  * HF and DFT
+  * Status: **released**
+
+- ReSpect (w/ M. Repisky, S. Komorowsky, K. Ruud, S. Pipolo)
+  * 4-component, Kramers restricted and unrestricted HF and DFT
+  * Real-time propagation _in progress_
+  * Status: **unreleased**
+
+- KOALA (w/ S. Höfener)
+  * Subsystem DFT up to linear electric response properties
+  * Status: **unreleased**
+
+- DIRAC (w/ T. Saue)
+  * 4-component, Kramers restricted, HF and DFT up to linear static electric response properties
+  * Status: **released**
+
+---
+
 ## Science with PCMSolver
 
-- VPCM
+- VPCM (w/ T. Daniel Crawford)
 
-- TDPCM
+- Cavities (w/ C. S. Pomelli, M. Bugeanu)
 
-- Cavities
+- Nonelectrostatics (w/ L. Frediani, A. H. Steindal)
 
-- Nonelectrostatics
-
-- Multidomain
+- Multidomain (w/ L. Frediani, A. H. Steindal, S. Corni)
 
 ---
 
